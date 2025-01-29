@@ -64,6 +64,7 @@ npm run dev
 
 
 
-### Reference
+### References
 
-1. [Infinite whiteboard with konvaJS and Angular — part 1](https://ashatilovdev.medium.com/infinite-whiteboard-with-konvajs-and-angular-part-1-db0f86cfe02d)
+1. [Infinite whiteboard with konvaJS and Angular — part 1 | Medium](https://ashatilovdev.medium.com/infinite-whiteboard-with-konvajs-and-angular-part-1-db0f86cfe02d)
+2. [react-konva infinite grid | Github Issues](https://github.com/konvajs/konva/issues/898#issuecomment-621338856)

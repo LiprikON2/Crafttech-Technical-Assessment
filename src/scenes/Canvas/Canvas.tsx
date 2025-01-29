@@ -1,19 +1,26 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Layer, Stage, Text } from "react-konva";
 import Konva from "konva";
 
 import { clamp } from "~/utils";
 import { useKeyHeld, useMouseButtonHeld } from "~/hooks";
-import { ColoredRect } from "./components";
+import { ColoredRect, GridLayer } from "./components";
 import classes from "./Canvas.module.css";
 
 interface CanvasProps {
     //
 }
+
+Konva.dragButtons = [1];
+
 export const Canvas = ({}: CanvasProps) => {
     const scaleBy = 1.1;
     const minScale = 0.5;
     const maxScale = 5;
+
+    const [stageScale, setStageScale] = useState(1);
+
+    const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
 
     const stageRef = useRef<Konva.Stage>(null);
 
@@ -34,21 +41,26 @@ export const Canvas = ({}: CanvasProps) => {
     });
     useMouseButtonHeld({
         button: 1,
-        onDown: () => {
+        onDown: (e) => {
+            e.preventDefault();
             if (!stageRef.current) return;
             stageRef.current.container().style.cursor = "grab";
         },
-        onUp: () => {
+        onUp: (e) => {
+            e.preventDefault();
+
             if (!stageRef.current) return;
             stageRef.current.container().style.cursor = "default";
         },
     });
 
+    // const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+
     return (
         <>
             <Stage
                 onContextMenu={(e) => {
-                    // Disable vanilla html context menu
+                    // Disable browser html context menu
                     e.evt.preventDefault();
                 }}
                 ref={stageRef}
@@ -56,9 +68,23 @@ export const Canvas = ({}: CanvasProps) => {
                 height={window.innerHeight}
                 draggable
                 onDragEnd={(e) => {
-                    // console.log(e, "dragend");
+                    setStagePos(e.currentTarget.position());
                 }}
+                // onMouseMove={(e) => {
+                //     // ref: https://stackoverflow.com/a/56870752
+                //     if (!stageRef.current) return;
+
+                //     var transform = stageRef.current.getAbsoluteTransform().copy();
+                //     // to detect relative position we need to invert transform
+                //     transform.invert();
+                //     // now we find relative point
+                //     const pos = stageRef.current.getPointerPosition();
+
+                //     if (!pos) return;
+                //     setCursorPos(transform.point(pos));
+                // }}
                 onWheel={(e) => {
+                    // ref: https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html
                     // stop default scrolling
                     e.evt.preventDefault();
                     if (!stageRef.current) return;
@@ -84,6 +110,7 @@ export const Canvas = ({}: CanvasProps) => {
 
                     const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
                     const clampedNewScale = clamp(newScale, minScale, maxScale);
+                    setStageScale(clampedNewScale);
 
                     stageRef.current.scale({ x: clampedNewScale, y: clampedNewScale });
 
@@ -92,14 +119,17 @@ export const Canvas = ({}: CanvasProps) => {
                         y: pointer.y - mousePointTo.y * clampedNewScale,
                     };
                     stageRef.current.position(newPos);
+                    setStagePos(newPos);
                 }}
             >
+                <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />
                 <Layer>
                     <Text text="Try click on rect" />
                     <ColoredRect />
                 </Layer>
                 <Layer>
                     <Text text="Try click on rect 2" />
+                    {/* <ColoredRect x={cursorPos.x} y={cursorPos.y} /> */}
                     <ColoredRect x={600} y={300} />
                 </Layer>
             </Stage>
