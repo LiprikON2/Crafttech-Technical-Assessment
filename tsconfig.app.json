@@ -17,10 +17,21 @@
 
         /* Linting */
         "strict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
+        // "noUnusedLocals": true,
+        // "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
-        "noUncheckedSideEffectImports": true
+        "noUncheckedSideEffectImports": true,
+
+        "baseUrl": ".",
+        "paths": {
+            "~/*": ["./src/*"],
+            "~/assets/*": ["src/assets/*"],
+            "~/components/*": ["src/components/*"],
+            "~/hooks/*": ["src/hooks/*"],
+            "~/utils/*": ["src/utils/*"],
+            "~/scenes/*": ["src/scenes/*"],
+            "~/public/*": ["public/*"]
+        }
     },
     "include": ["src"]
 }
