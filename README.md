@@ -1,50 +1,69 @@
-# React + TypeScript + Vite
+# Тестовое задание для Crafttech - Редактор фигур
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### Задание
 
-Currently, two official plugins are available:
+Вам необходимо разработать редактор фигур на основе следующих технологий:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- TypeScript
+- React
+- React-Konva
+- Konva.js
 
-## Expanding the ESLint configuration
+> [!note]
+> **Цель задания** — создать функциональное приложение, позволяющее работать со следующими элементами и функциональностью.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+#### Основные требования
 
-- Configure the top-level `parserOptions` property like this:
+##### 1. Бесконечный холст:
+- Холст должен позволять пользователю перемещаться по нему в любую сторону на любое расстояние.
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+##### 2. Добавление фигур:
+- Поддержка минимум трех типов фигур: прямоугольник, круг, треугольник.
+- Фигуры должны добавляться при клике на холст в позиции курсора.
+
+##### 3. Зумирование холста:
+- Реализуйте возможность увеличения и уменьшения масштаба холста с помощью колесика мыши или других подходящих методов.
+
+##### 4. Опциональные возможности:
+- Добавление фигур методом рисования: касание холста добавляет фигуру, а движение задает ее размер (до отпускания кнопки мыши).
+- Использование механизмов обработки событий Konva для взаимодействия с холстом и его компонентами может быть включено по вашему усмотрению.
+
+##### 5. Управление свойствами и настройками:
+- Разработайте меню с использованием компонентов HTML (TSX) для управления свойствами элементов, которое открывается по клику на элемент
+- Реализуйте как минимум одно свойство элемента (примеры: переключение на другой тип формы, изменение размеров через текстовые поля, изменения цвета обводки фигуры и/или заливки).
+
+##### 6. Оптимизация приложения:
+- Подумайте над оптимизацией
+- Минимизируйте количество перерисовок тяжелых компонетов
+
+##### 7. Размещение проекта:
+- Разместите проект на GitHub.
+- Оставте readme по запуску проекта.
+- Желательно использовать систему контроля версий в процессе разработки с коммитами, включающими описания изменений.
+
+#### Оценочные критерии
+
+- Соответствие требованиям задачи.
+- Чистота и поддерживаемость кода.
+- Правильное использование TypeScript и обеспечение строгой типизации.
+- Грамотная организация состояния компонентов.
+- Эффективное использование возможностей React и библиотеки Konva.
+- UX/UI дизайн приложения (простота и интуитивность использования).
+- Некоторое внимание будет уделяться истории коммитов и их внятности.
+
+
+> [!tip] 
+> Вы можете использовать любые дополнительные пакеты и библиотеки для достижения поставленных целей, но убедитесь, что они поддерживаются текущим стеком технологий.
+
+
+### Running
+
+```bash
+npm run dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+### Reference
+
+1. [Infinite whiteboard with konvaJS and Angular — part 1](https://ashatilovdev.medium.com/infinite-whiteboard-with-konvajs-and-angular-part-1-db0f86cfe02d)
