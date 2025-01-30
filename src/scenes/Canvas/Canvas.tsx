@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useListState } from "@mantine/hooks";
-import { Layer, Stage, Text } from "react-konva";
+import { Layer, Rect, Stage, Text } from "react-konva";
 import Konva from "konva";
 
 import { Tool } from "~/App";
@@ -17,12 +17,17 @@ interface CanvasProps {
 Konva.dragButtons = [1];
 
 interface ShapeComponentMap {
-    [key: string]: React.ComponentType<{ x: number; y: number }>;
+    [key: string]: React.ComponentType<any>;
 }
 
 const shapeComponentMap: ShapeComponentMap = {
     // circle: Circle,
-    rectangle: ColoredRect,
+    rectangle: Rect,
+};
+
+type Shape = {
+    type: string;
+    props: { x: number; y: number } & Konva.NodeConfig;
 };
 
 export const Canvas = ({ tool, setTool }: CanvasProps) => {
@@ -66,34 +71,80 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         },
     });
 
-    // const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+    const [shapes, shapeHandlers] = useListState<Shape>([]);
 
-    // const [dragPause, setDragPause] = useState(false);
-    // const [lastCenter, setLastCenter] = useState<Konva.Vector2d | null>(null);
-    // const [lastDist, setLastDist] = useState(0);
+    // useEffect(()=>{
 
-    // const getCenter = (p1: Konva.Vector2d, p2: Konva.Vector2d) => {
-    //     return {
-    //         x: (p1.x + p2.x) / 2,
-    //         y: (p1.y + p2.y) / 2,
-    //     };
-    // };
+    //     // remove (undo) unfinished shape
 
-    // const getDistance = (p1: Konva.Vector2d, p2: Konva.Vector2d) => {
-    //     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-    // };
+    //     setIsDrawing(false)
+    // }, [tool])
 
-    const [shapes, shapeHandlers] = useListState([{ type: "rectangle", x: 0, y: 0 }]);
+    /* ref: https://stackoverflow.com/a/56870752 */
+    const getMousePos = (): Konva.Vector2d | null => {
+        if (!stageRef.current) return null;
+        const transform = stageRef.current.getAbsoluteTransform().copy();
+        // to detect relative position we need to invert transform
+        transform.invert();
+        // now we find relative point
+        const pos = stageRef.current.getPointerPosition();
 
+        if (!pos) return null;
+        return transform.point(pos);
+    };
+
+    const [isDrawing, setIsDrawing] = useState(false);
     return (
         <Stage
             className={classes.stage}
-            onClick={(e) => {
+            onMouseDown={(e) => {
+                // ref: https://github.com/konvajs/react-konva/issues/164#issuecomment-360837853
                 if (tool === "rectangle") {
                     console.log("place");
+
+                    const mousePos = getMousePos();
+                    if (!mousePos) return;
+
+                    shapeHandlers.append({
+                        type: tool,
+                        props: {
+                            x: mousePos.x,
+                            y: mousePos.y,
+                            fill: Konva.Util.getRandomColor(),
+                            width: 0,
+                            height: 0,
+                        },
+                    });
+                    setIsDrawing(true);
                 }
             }}
-            onMouseMove={(e) => {}}
+            onMouseUp={(e) => {
+                if (tool === "rectangle" && isDrawing) {
+                    setIsDrawing(false);
+                }
+            }}
+            onMouseMove={(e) => {
+                if (!isDrawing) return;
+
+                const mousePos = getMousePos();
+                if (!mousePos) return;
+
+                if (tool === "rectangle") {
+                    const currShapeIndex = shapes.length - 1;
+                    const currShape = shapes[currShapeIndex];
+                    const newWidth = mousePos.x - currShape.props.x;
+                    const newHeight = mousePos.y - currShape.props.y;
+
+                    shapeHandlers.setItem(currShapeIndex, {
+                        ...currShape,
+                        props: {
+                            ...currShape.props,
+                            width: newWidth,
+                            height: newHeight,
+                        },
+                    });
+                }
+            }}
             onContextMenu={(e) => {
                 // Disable browser html context menu
                 e.evt.preventDefault();
@@ -105,20 +156,6 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
             onDragEnd={(e) => {
                 setStagePos(e.currentTarget.position());
             }}
-            // onMouseMove={(e) => {
-            //     // ref: https://stackoverflow.com/a/56870752
-            //     if (!stageRef.current) return;
-
-            //     var transform = stageRef.current.getAbsoluteTransform().copy();
-            //     // to detect relative position we need to invert transform
-            //     transform.invert();
-            //     // now we find relative point
-            //     const pos = stageRef.current.getPointerPosition();
-
-            //     if (!pos) return;
-            //     setCursorPos(transform.point(pos));
-            // }}
-
             onWheel={(e) => {
                 // ref: https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html
                 // stop default scrolling
@@ -160,14 +197,12 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         >
             <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />
             <Layer>
-                {shapes.map((shape, index) => {
-                    const ShapeComponent = shapeComponentMap[shape.type];
-
-                    return <ShapeComponent key={index} x={shape.x} y={shape.y} />;
+                {shapes.map(({ type, props }, index) => {
+                    const ShapeComponent = shapeComponentMap[type];
+                    return <ShapeComponent key={index} {...props} />;
                 })}
             </Layer>
             <Layer>
-                {/* <ColoredRect x={cursorPos.x}z y={cursorPos.y} /> */}
                 <ColoredRect x={600} y={300} />
             </Layer>
         </Stage>
