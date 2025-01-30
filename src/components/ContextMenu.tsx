@@ -1,6 +1,7 @@
+import { useElementSize, useViewportSize } from "@mantine/hooks";
+
 import { clamp } from "~/utils";
 import classes from "./ContextMenu.module.css";
-import { useClickOutside, useElementSize, useMergedRef, useViewportSize } from "@mantine/hooks";
 
 interface ContextMenuProps {
     x: number;

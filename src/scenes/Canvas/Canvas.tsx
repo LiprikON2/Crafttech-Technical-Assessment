@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { ColorInput, rem, Stack, Text } from "@mantine/core";
+import { useRef, useState } from "react";
 import { useListState } from "@mantine/hooks";
 import { Circle, Layer, Rect, RegularPolygon, Stage } from "react-konva";
 import Konva from "konva";

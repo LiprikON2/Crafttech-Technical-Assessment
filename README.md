@@ -1,5 +1,7 @@
 # Тестовое задание для Crafttech - Редактор фигур
 
+[![wakatime](https://wakatime.com/badge/user/08f508bd-d42c-46d7-909f-c80e7f16dc92/project/179e30d9-b357-4034-aad9-59d0f686227d.svg)](https://wakatime.com/badge/user/08f508bd-d42c-46d7-909f-c80e7f16dc92/project/179e30d9-b357-4034-aad9-59d0f686227d)
+
 ### Задание
 
 Вам необходимо разработать редактор фигур на основе следующих технологий:
@@ -59,12 +61,10 @@
 ### Running
 
 ```bash
+npm install
+```
+
+```bash
 npm run dev
 ```
 
-
-
-### References
-
-1. [Infinite whiteboard with konvaJS and Angular — part 1 | Medium](https://ashatilovdev.medium.com/infinite-whiteboard-with-konvajs-and-angular-part-1-db0f86cfe02d)
-2. [react-konva infinite grid | Github Issues](https://github.com/konvajs/konva/issues/898#issuecomment-621338856)

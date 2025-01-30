@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { ColorInput, rem, Stack, Text } from "@mantine/core";
+import { UseListStateHandlers } from "@mantine/hooks";
 
 import { ContextMenu } from "~/components";
 import { Shape, ShapeContextMenuState } from "../../Canvas";
-import { UseListStateHandlers } from "@mantine/hooks";
 
 interface ShapeContextMenuProps {
     contextMenu: ShapeContextMenuState;
