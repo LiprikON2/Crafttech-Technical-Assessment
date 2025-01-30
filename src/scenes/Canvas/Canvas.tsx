@@ -1,19 +1,31 @@
 import { useRef, useState } from "react";
+import { useListState } from "@mantine/hooks";
 import { Layer, Stage, Text } from "react-konva";
 import Konva from "konva";
 
+import { Tool } from "~/App";
 import { clamp } from "~/utils";
 import { useKeyHeld, useMouseButtonHeld } from "~/hooks";
 import { ColoredRect, GridLayer } from "./components";
 import classes from "./Canvas.module.css";
 
 interface CanvasProps {
-    //
+    tool: Tool;
+    setTool: (value: Tool) => void;
 }
 
 Konva.dragButtons = [1];
 
-export const Canvas = ({}: CanvasProps) => {
+interface ShapeComponentMap {
+    [key: string]: React.ComponentType<{ x: number; y: number }>;
+}
+
+const shapeComponentMap: ShapeComponentMap = {
+    // circle: Circle,
+    rectangle: ColoredRect,
+};
+
+export const Canvas = ({ tool, setTool }: CanvasProps) => {
     const scaleBy = 1.1;
     const minScale = 0.5;
     const maxScale = 5;
@@ -56,9 +68,32 @@ export const Canvas = ({}: CanvasProps) => {
 
     // const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
 
+    // const [dragPause, setDragPause] = useState(false);
+    // const [lastCenter, setLastCenter] = useState<Konva.Vector2d | null>(null);
+    // const [lastDist, setLastDist] = useState(0);
+
+    // const getCenter = (p1: Konva.Vector2d, p2: Konva.Vector2d) => {
+    //     return {
+    //         x: (p1.x + p2.x) / 2,
+    //         y: (p1.y + p2.y) / 2,
+    //     };
+    // };
+
+    // const getDistance = (p1: Konva.Vector2d, p2: Konva.Vector2d) => {
+    //     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    // };
+
+    const [shapes, shapeHandlers] = useListState([{ type: "rectangle", x: 0, y: 0 }]);
+
     return (
         <Stage
             className={classes.stage}
+            onClick={(e) => {
+                if (tool === "rectangle") {
+                    console.log("place");
+                }
+            }}
+            onMouseMove={(e) => {}}
             onContextMenu={(e) => {
                 // Disable browser html context menu
                 e.evt.preventDefault();
@@ -83,6 +118,7 @@ export const Canvas = ({}: CanvasProps) => {
             //     if (!pos) return;
             //     setCursorPos(transform.point(pos));
             // }}
+
             onWheel={(e) => {
                 // ref: https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html
                 // stop default scrolling
@@ -124,12 +160,14 @@ export const Canvas = ({}: CanvasProps) => {
         >
             <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />
             <Layer>
-                <Text text="Try click on rect" />
-                <ColoredRect />
+                {shapes.map((shape, index) => {
+                    const ShapeComponent = shapeComponentMap[shape.type];
+
+                    return <ShapeComponent key={index} x={shape.x} y={shape.y} />;
+                })}
             </Layer>
             <Layer>
-                <Text text="Try click on rect 2" />
-                {/* <ColoredRect x={cursorPos.x} y={cursorPos.y} /> */}
+                {/* <ColoredRect x={cursorPos.x}z y={cursorPos.y} /> */}
                 <ColoredRect x={600} y={300} />
             </Layer>
         </Stage>

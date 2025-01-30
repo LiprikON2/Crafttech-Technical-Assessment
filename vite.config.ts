@@ -7,7 +7,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
     resolve: {
         alias: [
-            { find: "~/", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
+            { find: "~", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
             {
                 find: "~/assets",
                 replacement: fileURLToPath(new URL("./src/assets", import.meta.url)),
