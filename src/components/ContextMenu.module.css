@@ -1,0 +1,14 @@
+.contextMenu {
+    position: absolute;
+
+    /* width: 8rem; */
+    width: fit-content;
+    height: fit-content;
+
+    padding: 0.25rem;
+    background-color: var(--mantine-color-dark-8);
+    border-radius: var(--mantine-radius-default);
+
+    display: flex;
+    flex-direction: column;
+}

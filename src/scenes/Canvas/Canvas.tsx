@@ -1,11 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ColorInput, rem, Stack, Text } from "@mantine/core";
 import { useListState } from "@mantine/hooks";
 import { Circle, Layer, Rect, RegularPolygon, Stage } from "react-konva";
 import Konva from "konva";
 
 import { Tool } from "~/App";
-import { clamp } from "~/utils";
-import { GridLayer } from "./components";
+import { GridLayer, ShapeContextMenu } from "./components";
 import { useToolEffects, useToolHandlers, useZoomHandlers } from "./hooks";
 import classes from "./Canvas.module.css";
 
@@ -18,6 +18,13 @@ const shapeComponentMap = {
     circle: Circle,
     rectangle: Rect,
     triangle: RegularPolygon,
+};
+
+export type ShapeContextMenuState = {
+    x: number;
+    y: number;
+    shape: Shape | null;
+    shapeIndex: number | null;
 };
 
 type Shapes = keyof typeof shapeComponentMap;
@@ -34,7 +41,7 @@ export interface ToolHandler {
 
 export type Shape = {
     type: Shapes;
-    commonProps: { x: number; y: number; uuid: string } & Konva.NodeConfig;
+    commonProps: { x: number; y: number; uuid: string } & Konva.NodeConfig & Konva.ShapeConfig;
     shapeProps: {} & Konva.RectConfig & Konva.CircleConfig & Partial<Konva.RegularPolygonConfig>;
 };
 
@@ -181,82 +188,118 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         targetHandles,
     });
 
+    const [contextMenu, setContextMenu] = useState<{
+        x: number;
+        y: number;
+        shape: Shape | null;
+        shapeIndex: number | null;
+    }>({
+        x: 0,
+        y: 0,
+        shape: null,
+        shapeIndex: null,
+    });
+    const dissmissContextMenu = () => {
+        setContextMenu({
+            x: 0,
+            y: 0,
+            shape: null,
+            shapeIndex: null,
+        });
+    };
+
     return (
-        <Stage
-            ref={stageRef}
-            className={classes.stage}
-            width={window.innerWidth}
-            height={window.innerHeight}
-            draggable
-            onDragEnd={(e) => {
-                setStagePos(e.currentTarget.position());
-            }}
-            onContextMenu={(e) => {
-                // Disable default browser context menu
-                e.evt.preventDefault();
-            }}
-            onWheel={(e) => {
-                // Disable default browser scrolling
-                e.evt.preventDefault();
-                zoomHandlers.onWheelZoom(e);
-            }}
-            onMouseDown={(e) => {
-                const mousePos = getMousePos();
-                if (!mousePos) return;
-                console.log("e", e);
-                toolHandlers[tool].onMouseDown(e, mousePos);
-            }}
-            onMouseUp={(e) => {
-                const mousePos = getMousePos();
-                if (!mousePos) return;
+        <>
+            <Stage
+                ref={stageRef}
+                className={classes.stage}
+                width={window.innerWidth}
+                height={window.innerHeight}
+                draggable
+                onDragEnd={(e) => {
+                    setStagePos(e.currentTarget.position());
+                }}
+                onContextMenu={(e) => {
+                    // Disable default browser context menu
+                    e.evt.preventDefault();
+                }}
+                onWheel={(e) => {
+                    // Disable default browser scrolling
+                    e.evt.preventDefault();
+                    zoomHandlers.onWheelZoom(e);
+                }}
+                onMouseDown={(e) => {
+                    dissmissContextMenu();
+                    const mousePos = getMousePos();
+                    if (!mousePos) return;
 
-                toolHandlers[tool].onMouseUp(e, mousePos);
-            }}
-            onMouseMove={(e) => {
-                const mousePos = getMousePos();
-                if (!mousePos) return;
+                    toolHandlers[tool].onMouseDown(e, mousePos);
+                }}
+                onMouseUp={(e) => {
+                    const mousePos = getMousePos();
+                    if (!mousePos) return;
 
-                toolHandlers[tool].onMouseMove(e, mousePos);
-            }}
-        >
-            <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />
-            <Layer>
-                {shapes.map(({ type, commonProps, shapeProps }) => {
-                    const ShapeComponent = shapeComponentMap[type];
+                    toolHandlers[tool].onMouseUp(e, mousePos);
+                }}
+                onMouseMove={(e) => {
+                    const mousePos = getMousePos();
+                    if (!mousePos) return;
 
-                    return (
-                        <ShapeComponent
-                            key={commonProps.uuid}
-                            type={type}
-                            {...commonProps}
-                            {...shapeProps}
-                            sides={shapeProps.sides!}
-                            radius={shapeProps.radius!}
+                    toolHandlers[tool].onMouseMove(e, mousePos);
+                }}
+            >
+                <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />
+                <Layer>
+                    {shapes.map(({ type, commonProps, shapeProps }, index) => {
+                        const ShapeComponent = shapeComponentMap[type];
+
+                        return (
+                            <ShapeComponent
+                                onContextMenu={(e) => {
+                                    setContextMenu({
+                                        x: e.evt.clientX,
+                                        y: e.evt.clientY,
+                                        shape: shapes[index],
+                                        shapeIndex: index,
+                                    });
+                                }}
+                                key={commonProps.uuid}
+                                type={type}
+                                {...commonProps}
+                                {...shapeProps}
+                                sides={shapeProps.sides!}
+                                radius={shapeProps.radius!}
+                            />
+                        );
+                    })}
+                </Layer>
+                <Layer>
+                    {DrawingMarquee && (
+                        <DrawingMarquee
+                            {...drawingMarquee.commonProps}
+                            {...drawingMarquee.shapeProps}
+                            sides={drawingMarquee.shapeProps.sides!}
+                            radius={drawingMarquee.shapeProps.radius!}
                         />
-                    );
-                })}
-            </Layer>
-            <Layer>
-                {DrawingMarquee && (
-                    <DrawingMarquee
-                        {...drawingMarquee.commonProps}
-                        {...drawingMarquee.shapeProps}
-                        sides={drawingMarquee.shapeProps.sides!}
-                        radius={drawingMarquee.shapeProps.radius!}
-                    />
-                )}
-            </Layer>
-            <Layer>
-                {TargetHandles && (
-                    <TargetHandles
-                        listening={false}
-                        {...targetHandles.commonProps}
-                        {...targetHandles.shapeProps}
-                        sides={targetHandles.shapeProps.sides!}
-                        radius={targetHandles.shapeProps.radius!}
-                    />
-                )}
-            </Layer>
-        </Stage>
+                    )}
+                </Layer>
+                <Layer>
+                    {TargetHandles && (
+                        <TargetHandles
+                            listening={false}
+                            {...targetHandles.commonProps}
+                            {...targetHandles.shapeProps}
+                            sides={targetHandles.shapeProps.sides!}
+                            radius={targetHandles.shapeProps.radius!}
+                        />
+                    )}
+                </Layer>
+            </Stage>
+            <ShapeContextMenu
+                contextMenu={contextMenu}
+                setContextMenu={setContextMenu}
+                shapeHandlers={shapeHandlers}
+            />
+        </>
     );
 };
