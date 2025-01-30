@@ -1,6 +1,7 @@
 import Konva from "konva";
-import { createTargetHandles, isShape, MouseButtons, Shape } from "../Canvas";
 import { UseListStateHandlers } from "@mantine/hooks";
+
+import { createTargetHandles, isShape, MouseButtons, Shape, ToolHandler } from "../../../Canvas";
 
 interface MoveToolHandler {
     shapes: Shape[];
@@ -23,8 +24,8 @@ export const useMoveTool = ({
     targetHandles,
     setTargetHandles,
 }: MoveToolHandler) => {
-    const toolHandler = {
-        onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+    const toolHandler: ToolHandler = {
+        onMouseDown: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             if (!isShape(e.target.attrs.type)) {
@@ -33,30 +34,33 @@ export const useMoveTool = ({
             }
 
             const shapeIndex = shapes.findIndex(
-                (shape) => shape.props.uuid === e.target.attrs.uuid
+                (shape) => shape.commonProps.uuid === e.target.attrs.uuid
             );
             if (shapeIndex === -1) return;
 
             const shape = shapes[shapeIndex];
-            const dragOrigin = { x: mousePos.x - shape.props.x, y: mousePos.y - shape.props.y };
+            const dragOrigin = {
+                x: mousePos.x - shape.commonProps.x,
+                y: mousePos.y - shape.commonProps.y,
+            };
 
             setDragOrigin(dragOrigin);
-            setTarget(shape.props.uuid);
+            setTarget(shape.commonProps.uuid);
             setTargetHandles(createTargetHandles(shape));
             shapeHandlers.reorder({ from: shapeIndex, to: shapes.length - 1 });
         },
 
-        onMouseUp: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+        onMouseUp: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             setDragOrigin(null);
         },
 
-        onMouseMove: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+        onMouseMove: (e, mousePos) => {
             if (!target || !dragOrigin) return;
 
             const shapeIndex = shapes.findIndex(
-                (shape) => shape.props.uuid === e.target.attrs.uuid
+                (shape) => shape.commonProps.uuid === e.target.attrs.uuid
             );
             if (shapeIndex === -1) return;
 
@@ -68,8 +72,8 @@ export const useMoveTool = ({
 
             shapeHandlers.setItem(shapeIndex, {
                 ...shape,
-                props: {
-                    ...shape.props,
+                commonProps: {
+                    ...shape.commonProps,
                     x: newPos.x,
                     y: newPos.y,
                 },
@@ -78,8 +82,8 @@ export const useMoveTool = ({
             if (targetHandles === null) return;
             setTargetHandles({
                 ...targetHandles,
-                props: {
-                    ...targetHandles.props,
+                commonProps: {
+                    ...targetHandles.commonProps,
                     x: newPos.x,
                     y: newPos.y,
                 },

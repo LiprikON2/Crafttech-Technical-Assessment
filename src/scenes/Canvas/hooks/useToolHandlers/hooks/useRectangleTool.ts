@@ -7,7 +7,7 @@ import {
     MouseButtons,
     Shape,
     ToolHandler,
-} from "../Canvas";
+} from "../../../Canvas";
 
 interface RectangleToolHandler {
     drawingMarquee: Shape | null;
@@ -26,19 +26,19 @@ export const useRectangleTool = ({
 }: RectangleToolHandler) => {
     const toolHandler: ToolHandler = {
         // ref: https://github.com/konvajs/react-konva/issues/164#issuecomment-360837853
-        onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+        onMouseDown: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             setDrawingMarquee(createDrawingMarquee("rectangle", mousePos));
         },
 
-        onMouseUp: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+        onMouseUp: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             if (
                 !drawingMarquee ||
-                drawingMarquee.props.width === 0 ||
-                drawingMarquee.props.height === 0
+                drawingMarquee.shapeProps.width === 0 ||
+                drawingMarquee.shapeProps.height === 0
             ) {
                 setDrawingMarquee(null);
                 return;
@@ -46,30 +46,32 @@ export const useRectangleTool = ({
 
             const newShape: Shape = {
                 type: "rectangle",
-                props: {
-                    x: drawingMarquee.props.x,
-                    y: drawingMarquee.props.y,
+                commonProps: {
+                    x: drawingMarquee.commonProps.x,
+                    y: drawingMarquee.commonProps.y,
                     uuid: crypto.randomUUID(),
-                    width: drawingMarquee.props.width,
-                    height: drawingMarquee.props.height,
-                    fill: Konva.Util.getRandomColor(),
                     shadowBlur: 5,
+                    fill: Konva.Util.getRandomColor(),
+                },
+                shapeProps: {
+                    width: drawingMarquee.shapeProps.width,
+                    height: drawingMarquee.shapeProps.height,
+                    scaleX: drawingMarquee.shapeProps.scaleX,
+                    scaleY: drawingMarquee.shapeProps.scaleY,
                     cornerRadius: 5,
-                    scaleX: drawingMarquee.props.scaleX,
-                    scaleY: drawingMarquee.props.scaleY,
                 },
             };
             shapeHandlers.append(newShape);
             setDrawingMarquee(null);
 
-            setTarget(newShape.props.uuid);
+            setTarget(newShape.commonProps.uuid);
             setTargetHandles(createTargetHandles(newShape));
         },
 
-        onMouseMove: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+        onMouseMove: (e, mousePos) => {
             if (!drawingMarquee) return;
-            const newWidth = mousePos.x - drawingMarquee.props.x;
-            const newHeight = mousePos.y - drawingMarquee.props.y;
+            const newWidth = mousePos.x - drawingMarquee.commonProps.x;
+            const newHeight = mousePos.y - drawingMarquee.commonProps.y;
 
             // ref: https://github.com/konvajs/konva/issues/374
             const scaleX = newWidth < 0 ? -1 : 1;
@@ -77,8 +79,8 @@ export const useRectangleTool = ({
 
             setDrawingMarquee({
                 ...drawingMarquee,
-                props: {
-                    ...drawingMarquee.props,
+                shapeProps: {
+                    ...drawingMarquee.shapeProps,
                     width: Math.abs(newWidth),
                     height: Math.abs(newHeight),
                     scaleX,

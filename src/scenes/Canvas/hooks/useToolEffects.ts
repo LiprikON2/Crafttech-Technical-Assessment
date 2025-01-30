@@ -5,7 +5,13 @@ import { Tool } from "~/App";
 import { useKeyHeld, useMouseButtonHeld } from "~/hooks";
 import { MouseButtons, Shape } from "../Canvas";
 
-export const useToolEffects = (stageRef: any, tool: Tool, setTool: (value: Tool) => void) => {
+interface ToolEffects {
+    stageRef: React.RefObject<Konva.Stage>;
+    tool: Tool;
+    setTool: (value: Tool) => void;
+}
+
+export const useToolEffects = ({ stageRef, tool, setTool }: ToolEffects) => {
     const [drawingMarquee, setDrawingMarquee] = useState<Shape | null>(null);
     const [targetHandles, setTargetHandles] = useState<Shape | null>(null);
     const [dragOrigin, setDragOrigin] = useState<Konva.Vector2d | null>(null);

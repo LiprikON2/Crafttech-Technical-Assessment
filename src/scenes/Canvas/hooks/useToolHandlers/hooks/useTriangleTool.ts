@@ -7,9 +7,9 @@ import {
     MouseButtons,
     Shape,
     ToolHandler,
-} from "../Canvas";
+} from "../../../Canvas";
 
-interface CircleToolHandler {
+interface TriangleToolHandler {
     drawingMarquee: Shape | null;
     setDrawingMarquee: (value: Shape | null) => void;
     setTarget: (value: string | null) => void;
@@ -17,59 +17,68 @@ interface CircleToolHandler {
     setTargetHandles: (value: Shape | null) => void;
 }
 
-export const useCircleTool = ({
+export const useTriangleTool = ({
     drawingMarquee,
     setDrawingMarquee,
     shapeHandlers,
     setTarget,
     setTargetHandles,
-}: CircleToolHandler) => {
+}: TriangleToolHandler) => {
     const toolHandler: ToolHandler = {
         // ref: https://github.com/konvajs/react-konva/issues/164#issuecomment-360837853
-        onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+        onMouseDown: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
-            setDrawingMarquee(createDrawingMarquee("circle", mousePos));
+            setDrawingMarquee(createDrawingMarquee("triangle", mousePos));
         },
 
-        onMouseUp: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+        onMouseUp: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
-            if (!drawingMarquee || drawingMarquee.props.radius === 0) {
+            if (!drawingMarquee || drawingMarquee.shapeProps.radius === 0) {
                 setDrawingMarquee(null);
                 return;
             }
 
             const newShape: Shape = {
-                type: "circle",
-                props: {
-                    x: drawingMarquee.props.x,
-                    y: drawingMarquee.props.y,
+                type: "triangle",
+                commonProps: {
+                    x: drawingMarquee.commonProps.x,
+                    y: drawingMarquee.commonProps.y,
+                    rotation: drawingMarquee.commonProps.rotation,
                     uuid: crypto.randomUUID(),
-                    radius: drawingMarquee.props.radius,
                     fill: Konva.Util.getRandomColor(),
                     shadowBlur: 5,
+                },
+                shapeProps: {
+                    sides: drawingMarquee.shapeProps.sides,
+                    radius: drawingMarquee.shapeProps.radius,
                 },
             };
 
             shapeHandlers.append(newShape);
             setDrawingMarquee(null);
 
-            setTarget(newShape.props.uuid);
+            setTarget(newShape.commonProps.uuid);
             setTargetHandles(createTargetHandles(newShape));
         },
 
-        onMouseMove: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+        onMouseMove: (e, mousePos) => {
             if (!drawingMarquee) return;
-            const deltaX = mousePos.x - drawingMarquee.props.x;
-            const deltaY = mousePos.y - drawingMarquee.props.y;
+            const deltaX = mousePos.x - drawingMarquee.commonProps.x;
+            const deltaY = mousePos.y - drawingMarquee.commonProps.y;
 
             const newRadius = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+            const newRotation = getRotation(deltaX, deltaY) - 30;
 
             setDrawingMarquee({
                 ...drawingMarquee,
-                props: {
-                    ...drawingMarquee.props,
+                commonProps: {
+                    ...drawingMarquee.commonProps,
+                    rotation: newRotation,
+                },
+                shapeProps: {
+                    ...drawingMarquee.shapeProps,
                     radius: newRadius,
                 },
             });
@@ -77,4 +86,10 @@ export const useCircleTool = ({
     };
 
     return toolHandler;
+};
+
+const getRotation = (deltaX: number, deltaY: number) => {
+    const rotationRad = Math.atan2(deltaY, deltaX);
+    const rotation = rotationRad * (180 / Math.PI);
+    return rotation;
 };

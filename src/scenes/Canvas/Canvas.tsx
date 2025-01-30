@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
 import { useListState } from "@mantine/hooks";
-import { Circle, Layer, Rect, Stage } from "react-konva";
+import { Circle, Layer, Rect, RegularPolygon, Stage } from "react-konva";
 import Konva from "konva";
 
 import { Tool } from "~/App";
 import { clamp } from "~/utils";
 import { GridLayer } from "./components";
-import { useCircleTool, useMoveTool, useRectangleTool, useToolEffects } from "./hooks";
+import { useToolEffects, useToolHandlers, useZoomHandlers } from "./hooks";
 import classes from "./Canvas.module.css";
 
 interface CanvasProps {
@@ -17,6 +17,7 @@ interface CanvasProps {
 const shapeComponentMap = {
     circle: Circle,
     rectangle: Rect,
+    triangle: RegularPolygon,
 };
 
 type Shapes = keyof typeof shapeComponentMap;
@@ -33,54 +34,26 @@ export interface ToolHandler {
 
 export type Shape = {
     type: Shapes;
-    props: { x: number; y: number; uuid: string } & Konva.NodeConfig;
-};
-
-export const createTargetHandles = (shape: Shape) => {
-    switch (shape.type) {
-        case "rectangle":
-            return {
-                type: shape.type,
-                props: {
-                    x: shape.props.x,
-                    y: shape.props.y,
-                    uuid: crypto.randomUUID(),
-                    stroke: "#888",
-                    dash: [4, 4],
-                    width: shape.props.width,
-                    height: shape.props.height,
-                    cornerRadius: shape.props.cornerRadius,
-                    scaleX: shape.props.scaleX,
-
-                    scaleY: shape.props.scaleY,
-                },
-            };
-        case "circle":
-            return {
-                type: shape.type,
-                props: {
-                    x: shape.props.x,
-                    y: shape.props.y,
-                    uuid: crypto.randomUUID(),
-                    stroke: "#888",
-                    dash: [4, 4],
-                    radius: shape.props.radius,
-                },
-            };
-    }
+    commonProps: { x: number; y: number; uuid: string } & Konva.NodeConfig;
+    shapeProps: {} & Konva.RectConfig & Konva.CircleConfig & Partial<Konva.RegularPolygonConfig>;
 };
 
 export const createDrawingMarquee = (type: Shapes, mousePos: Konva.Vector2d) => {
+    const commonProps = {
+        x: mousePos.x,
+        y: mousePos.y,
+        uuid: crypto.randomUUID(),
+        stroke: "#888",
+        dash: [2, 2],
+        rotation: 0,
+    };
+
     switch (type) {
         case "rectangle":
             return {
                 type,
-                props: {
-                    x: mousePos.x,
-                    y: mousePos.y,
-                    uuid: crypto.randomUUID(),
-                    stroke: "#888",
-                    dash: [2, 2],
+                commonProps,
+                shapeProps: {
                     width: 0,
                     height: 0,
                     cornerRadius: 5,
@@ -89,13 +62,63 @@ export const createDrawingMarquee = (type: Shapes, mousePos: Konva.Vector2d) => 
         case "circle":
             return {
                 type,
-                props: {
-                    x: mousePos.x,
-                    y: mousePos.y,
-                    uuid: crypto.randomUUID(),
-                    stroke: "#888",
-                    dash: [2, 2],
+                commonProps,
+                shapeProps: {
                     radius: 0,
+                },
+            };
+        case "triangle":
+            return {
+                type,
+                commonProps,
+                shapeProps: {
+                    radius: 0,
+                    sides: 3,
+                },
+            };
+    }
+};
+
+export const createTargetHandles = (shape: Shape) => {
+    const commonProps = {
+        x: shape.commonProps.x,
+        y: shape.commonProps.y,
+        rotation: shape.commonProps.rotation,
+
+        uuid: crypto.randomUUID(),
+        stroke: "#888",
+        dash: [4, 4],
+    };
+
+    switch (shape.type) {
+        case "rectangle":
+            return {
+                type: shape.type,
+                commonProps,
+                shapeProps: {
+                    width: shape.shapeProps.width,
+                    height: shape.shapeProps.height,
+                    cornerRadius: shape.shapeProps.cornerRadius,
+                    scaleX: shape.shapeProps.scaleX,
+
+                    scaleY: shape.shapeProps.scaleY,
+                },
+            };
+        case "circle":
+            return {
+                type: shape.type,
+                commonProps,
+                shapeProps: {
+                    radius: shape.shapeProps.radius,
+                },
+            };
+        case "triangle":
+            return {
+                type: shape.type,
+                commonProps,
+                shapeProps: {
+                    radius: shape.shapeProps.radius,
+                    sides: shape.shapeProps.sides,
                 },
             };
     }
@@ -108,10 +131,6 @@ export enum MouseButtons {
 }
 
 export const Canvas = ({ tool, setTool }: CanvasProps) => {
-    const scaleBy = 1.1;
-    const minScale = 0.5;
-    const maxScale = 5;
-
     const [stageScale, setStageScale] = useState(1);
 
     const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
@@ -127,7 +146,7 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         setDragOrigin,
         targetHandles,
         setTargetHandles,
-    } = useToolEffects(stageRef, tool, setTool);
+    } = useToolEffects({ stageRef, tool, setTool });
 
     const DrawingMarquee = drawingMarquee && shapeComponentMap[drawingMarquee.type];
     const TargetHandles = targetHandles && shapeComponentMap[targetHandles.type];
@@ -147,84 +166,20 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         return transform.point(pos);
     };
 
-    const handleWheelZoom = (e: Konva.KonvaEventObject<WheelEvent>) => {
-        if (!stageRef.current) return;
+    const zoomHandlers = useZoomHandlers({ stageRef, setStageScale, setStagePos });
 
-        // ref: https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html
-        const oldScale = stageRef.current.scaleX();
-        const pointer = stageRef.current.getPointerPosition();
-
-        if (!pointer) return;
-
-        const mousePointTo = {
-            x: (pointer.x - stageRef.current.x()) / oldScale,
-            y: (pointer.y - stageRef.current.y()) / oldScale,
-        };
-
-        // how to scale? Zoom in? Or zoom out?
-        let direction = e.evt.deltaY > 0 ? -1 : 1;
-
-        // when we zoom on trackpad, e.evt.ctrlKey is true
-        // in that case lets revert direction
-        if (e.evt.ctrlKey) {
-            direction = -direction;
-        }
-
-        const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
-        const clampedNewScale = clamp(newScale, minScale, maxScale);
-        setStageScale(clampedNewScale);
-
-        stageRef.current.scale({ x: clampedNewScale, y: clampedNewScale });
-
-        const newPos = {
-            x: pointer.x - mousePointTo.x * clampedNewScale,
-            y: pointer.y - mousePointTo.y * clampedNewScale,
-        };
-        stageRef.current.position(newPos);
-        setStagePos(newPos);
-    };
-
-    const moveToolHandler = useMoveTool({
+    const toolHandlers = useToolHandlers({
+        drawingMarquee,
+        setDrawingMarquee,
+        setTargetHandles,
         shapes,
         dragOrigin,
         setDragOrigin,
-        shapeHandlers,
         target,
         setTarget,
+        shapeHandlers,
         targetHandles,
-        setTargetHandles,
     });
-
-    const rectangleToolHandler = useRectangleTool({
-        drawingMarquee,
-        setDrawingMarquee,
-        shapeHandlers,
-        setTarget,
-        setTargetHandles,
-    });
-    const circleToolHandler = useCircleTool({
-        drawingMarquee,
-        setDrawingMarquee,
-        shapeHandlers,
-        setTarget,
-        setTargetHandles,
-    });
-
-    const toolHandlers = {
-        "move-tool": moveToolHandler,
-        rectangle: rectangleToolHandler,
-        circle: circleToolHandler,
-        triangle: {
-            onMouseDown: () => {},
-            onMouseUp: () => {},
-            onMouseMove: () => {},
-        },
-        "hand-tool": {
-            onMouseDown: () => {},
-            onMouseUp: () => {},
-            onMouseMove: () => {},
-        },
-    };
 
     return (
         <Stage
@@ -243,12 +198,12 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
             onWheel={(e) => {
                 // Disable default browser scrolling
                 e.evt.preventDefault();
-                handleWheelZoom(e);
+                zoomHandlers.onWheelZoom(e);
             }}
             onMouseDown={(e) => {
                 const mousePos = getMousePos();
                 if (!mousePos) return;
-
+                console.log("e", e);
                 toolHandlers[tool].onMouseDown(e, mousePos);
             }}
             onMouseUp={(e) => {
@@ -266,14 +221,41 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         >
             <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />
             <Layer>
-                {shapes.map(({ type, props }) => {
+                {shapes.map(({ type, commonProps, shapeProps }) => {
                     const ShapeComponent = shapeComponentMap[type];
-                    return <ShapeComponent key={props.uuid} type={type} {...props} />;
+
+                    return (
+                        <ShapeComponent
+                            key={commonProps.uuid}
+                            type={type}
+                            {...commonProps}
+                            {...shapeProps}
+                            sides={shapeProps.sides!}
+                            radius={shapeProps.radius!}
+                        />
+                    );
                 })}
             </Layer>
-            <Layer>{DrawingMarquee && <DrawingMarquee {...drawingMarquee.props} />}</Layer>
             <Layer>
-                {TargetHandles && <TargetHandles listening={false} {...targetHandles.props} />}
+                {DrawingMarquee && (
+                    <DrawingMarquee
+                        {...drawingMarquee.commonProps}
+                        {...drawingMarquee.shapeProps}
+                        sides={drawingMarquee.shapeProps.sides!}
+                        radius={drawingMarquee.shapeProps.radius!}
+                    />
+                )}
+            </Layer>
+            <Layer>
+                {TargetHandles && (
+                    <TargetHandles
+                        listening={false}
+                        {...targetHandles.commonProps}
+                        {...targetHandles.shapeProps}
+                        sides={targetHandles.shapeProps.sides!}
+                        radius={targetHandles.shapeProps.radius!}
+                    />
+                )}
             </Layer>
         </Stage>
     );
