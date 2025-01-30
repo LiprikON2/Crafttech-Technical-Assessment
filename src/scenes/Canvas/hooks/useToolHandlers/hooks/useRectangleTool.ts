@@ -26,13 +26,13 @@ export const useRectangleTool = ({
 }: RectangleToolHandler) => {
     const toolHandler: ToolHandler = {
         // ref: https://github.com/konvajs/react-konva/issues/164#issuecomment-360837853
-        onMouseDown: (e, mousePos) => {
+        onPointerDown: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             setDrawingMarquee(createDrawingMarquee("rectangle", mousePos));
         },
 
-        onMouseUp: (e, mousePos) => {
+        onPointerUp: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             if (
@@ -68,7 +68,7 @@ export const useRectangleTool = ({
             setTargetHandles(createTargetHandles(newShape));
         },
 
-        onMouseMove: (e, mousePos) => {
+        onPointerMove: (e, mousePos) => {
             if (!drawingMarquee) return;
             const newWidth = mousePos.x - drawingMarquee.commonProps.x;
             const newHeight = mousePos.y - drawingMarquee.commonProps.y;

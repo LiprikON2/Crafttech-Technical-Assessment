@@ -33,9 +33,9 @@ export const isShape = (value: string): value is Shapes => {
 };
 
 export interface ToolHandler {
-    onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
-    onMouseMove: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
-    onMouseUp: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
+    onPointerDown: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
+    onPointerMove: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
+    onPointerUp: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
 }
 
 export type Shape = {
@@ -235,24 +235,24 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
                     e.evt.preventDefault();
                     zoomHandlers.onWheelZoom(e);
                 }}
-                onMouseDown={(e) => {
+                onPointerDown={(e) => {
                     dissmissContextMenu();
                     const mousePos = getMousePos();
                     if (!mousePos) return;
 
-                    toolHandlers[tool].onMouseDown(e, mousePos);
+                    toolHandlers[tool].onPointerDown(e, mousePos);
                 }}
-                onMouseUp={(e) => {
+                onPointerUp={(e) => {
                     const mousePos = getMousePos();
                     if (!mousePos) return;
 
-                    toolHandlers[tool].onMouseUp(e, mousePos);
+                    toolHandlers[tool].onPointerUp(e, mousePos);
                 }}
-                onMouseMove={(e) => {
+                onPointerMove={(e) => {
                     const mousePos = getMousePos();
                     if (!mousePos) return;
 
-                    toolHandlers[tool].onMouseMove(e, mousePos);
+                    toolHandlers[tool].onPointerMove(e, mousePos);
                 }}
             >
                 <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />

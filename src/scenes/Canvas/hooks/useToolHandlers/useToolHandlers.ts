@@ -70,9 +70,9 @@ export const useToolHandlers = ({
         circle: circleToolHandler,
         triangle: triangleToolHandler,
         "hand-tool": {
-            onMouseDown: () => {},
-            onMouseUp: () => {},
-            onMouseMove: () => {},
+            onPointerDown: () => {},
+            onPointerUp: () => {},
+            onPointerMove: () => {},
         },
     };
     return toolHandlers;

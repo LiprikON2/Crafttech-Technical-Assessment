@@ -25,11 +25,11 @@ export const useMoveTool = ({
     setTargetHandles,
 }: MoveToolHandler) => {
     const toolHandler: ToolHandler = {
-        onMouseDown: (e, mousePos) => {
+        onPointerDown: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
-
             if (!isShape(e.target.attrs.type)) {
                 setTarget(null);
+                setTargetHandles(null);
                 return;
             }
 
@@ -50,13 +50,13 @@ export const useMoveTool = ({
             shapeHandlers.reorder({ from: shapeIndex, to: shapes.length - 1 });
         },
 
-        onMouseUp: (e, mousePos) => {
+        onPointerUp: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             setDragOrigin(null);
         },
 
-        onMouseMove: (e, mousePos) => {
+        onPointerMove: (e, mousePos) => {
             if (!target || !dragOrigin) return;
 
             const shapeIndex = shapes.findIndex(

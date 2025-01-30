@@ -26,13 +26,13 @@ export const useTriangleTool = ({
 }: TriangleToolHandler) => {
     const toolHandler: ToolHandler = {
         // ref: https://github.com/konvajs/react-konva/issues/164#issuecomment-360837853
-        onMouseDown: (e, mousePos) => {
+        onPointerDown: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             setDrawingMarquee(createDrawingMarquee("triangle", mousePos));
         },
 
-        onMouseUp: (e, mousePos) => {
+        onPointerUp: (e, mousePos) => {
             if (e.evt.button !== MouseButtons.Left) return;
 
             if (!drawingMarquee || drawingMarquee.shapeProps.radius === 0) {
@@ -63,7 +63,7 @@ export const useTriangleTool = ({
             setTargetHandles(createTargetHandles(newShape));
         },
 
-        onMouseMove: (e, mousePos) => {
+        onPointerMove: (e, mousePos) => {
             if (!drawingMarquee) return;
             const deltaX = mousePos.x - drawingMarquee.commonProps.x;
             const deltaY = mousePos.y - drawingMarquee.commonProps.y;
