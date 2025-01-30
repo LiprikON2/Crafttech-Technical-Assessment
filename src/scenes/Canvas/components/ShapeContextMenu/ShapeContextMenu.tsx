@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
-import { ColorInput, rem, Stack, Text } from "@mantine/core";
+import { ActionIcon, ColorInput, Group, rem, Stack, Text } from "@mantine/core";
 import { UseListStateHandlers } from "@mantine/hooks";
 
 import { ContextMenu } from "~/components";
 import { Shape, ShapeContextMenuState } from "../../Canvas";
+import { IconTrash } from "@tabler/icons-react";
 
 interface ShapeContextMenuProps {
     contextMenu: ShapeContextMenuState;
-    setContextMenu: (value: ShapeContextMenuState) => void;
     shapeHandlers: UseListStateHandlers<Shape>;
+    removeShape: () => void;
 }
 
 export const ShapeContextMenu = ({
     contextMenu,
-    setContextMenu,
     shapeHandlers,
+    removeShape,
 }: ShapeContextMenuProps) => {
     const [contextFill, setContextFill] = useState<string>();
 
@@ -27,9 +28,20 @@ export const ShapeContextMenu = ({
         <ContextMenu x={contextMenu.x} y={contextMenu.y} visible={contextMenu.shape !== null}>
             {contextMenu.shape && (
                 <Stack p={rem(4)} gap="xs">
-                    <Text tt="capitalize" size="sm" fw={700} style={{ lineHeight: 1 }}>
-                        {contextMenu.shape.type}
-                    </Text>
+                    <Group justify="space-between">
+                        <Text tt="capitalize" size="sm" fw={700} style={{ lineHeight: 1 }}>
+                            {contextMenu.shape.type}
+                        </Text>
+                        <ActionIcon
+                            onClick={removeShape}
+                            color="red"
+                            p={0}
+                            size="lg"
+                            variant="transparent"
+                        >
+                            <IconTrash style={{ width: "60%", height: "60%" }} stroke={1.5} />
+                        </ActionIcon>
+                    </Group>
                     <ColorInput
                         styles={{ eyeDropperButton: { padding: 0 } }}
                         value={contextFill}

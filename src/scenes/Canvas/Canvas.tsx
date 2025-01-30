@@ -207,6 +207,14 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         });
     };
 
+    const removeShape = () => {
+        if (contextMenu.shapeIndex === null) return;
+
+        shapeHandlers.remove(contextMenu.shapeIndex);
+        setTargetHandles(null);
+        dissmissContextMenu();
+    };
+
     return (
         <>
             <Stage
@@ -261,6 +269,7 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
                                         shape: shapes[index],
                                         shapeIndex: index,
                                     });
+                                    setTargetHandles(createTargetHandles(shapes[index]));
                                 }}
                                 key={commonProps.uuid}
                                 type={type}
@@ -296,8 +305,8 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
             </Stage>
             <ShapeContextMenu
                 contextMenu={contextMenu}
-                setContextMenu={setContextMenu}
                 shapeHandlers={shapeHandlers}
+                removeShape={removeShape}
             />
         </>
     );

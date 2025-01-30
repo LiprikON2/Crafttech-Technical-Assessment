@@ -4,6 +4,8 @@
 
 Демо - https://crafttech-task.netlify.app/
 
+![](https://i.imgur.com/yeFuXMq.png)
+
 ### Задание
 
 Вам необходимо разработать редактор фигур на основе следующих технологий:
