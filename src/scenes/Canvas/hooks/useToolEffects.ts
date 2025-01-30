@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Tool } from "~/App";
 import { useKeyHeld, useMouseButtonHeld } from "~/hooks";
 import { MouseButtons, Shape } from "../Canvas";
+import { useHotkeys } from "@mantine/hooks";
 
 interface ToolEffects {
     stageRef: React.RefObject<Konva.Stage>;
@@ -40,6 +41,39 @@ export const useToolEffects = ({ stageRef, tool, setTool }: ToolEffects) => {
         },
         [tool]
     );
+
+    useHotkeys([
+        [
+            "V",
+            () => {
+                setTool("move-tool");
+            },
+        ],
+        [
+            "H",
+            () => {
+                setTool("hand-tool");
+            },
+        ],
+        [
+            "T",
+            () => {
+                setTool("triangle");
+            },
+        ],
+        [
+            "C",
+            () => {
+                setTool("circle");
+            },
+        ],
+        [
+            "R",
+            () => {
+                setTool("rectangle");
+            },
+        ],
+    ]);
     /* Can pan stage while middle mouse button is held */
     useMouseButtonHeld(
         {
