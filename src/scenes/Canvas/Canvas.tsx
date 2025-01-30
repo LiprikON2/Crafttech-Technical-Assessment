@@ -1,20 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useListState } from "@mantine/hooks";
-import { Layer, Rect, Stage, Text } from "react-konva";
+import { Layer, Rect, Stage } from "react-konva";
 import Konva from "konva";
 
 import { Tool } from "~/App";
 import { clamp } from "~/utils";
-import { useKeyHeld, useMouseButtonHeld } from "~/hooks";
 import { ColoredRect, GridLayer } from "./components";
+import { useToolEffects } from "./hooks";
 import classes from "./Canvas.module.css";
 
 interface CanvasProps {
     tool: Tool;
     setTool: (value: Tool) => void;
 }
-
-Konva.dragButtons = [1];
 
 interface ShapeComponentMap {
     [key: string]: React.ComponentType<any>;
@@ -41,44 +39,9 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
 
     const stageRef = useRef<Konva.Stage>(null);
 
-    /* Can drag stage with middle mouse button or also left and right while spacebar is held */
-    useKeyHeld({
-        code: "Space",
-        onDown: () => {
-            Konva.dragButtons = [0, 1, 2]; // Left, middle, right mouse buttons
-            if (!stageRef.current) return;
-            stageRef.current.container().style.cursor = "grab";
-        },
-        onUp: () => {
-            Konva.dragButtons = [1]; // Middle mouse button
-
-            if (!stageRef.current) return;
-            stageRef.current.container().style.cursor = "default";
-        },
-    });
-    useMouseButtonHeld({
-        button: 1,
-        onDown: (e) => {
-            e.preventDefault();
-            if (!stageRef.current) return;
-            stageRef.current.container().style.cursor = "grab";
-        },
-        onUp: (e) => {
-            e.preventDefault();
-
-            if (!stageRef.current) return;
-            stageRef.current.container().style.cursor = "default";
-        },
-    });
+    const { isDrawing, setIsDrawing } = useToolEffects(stageRef, tool, setTool);
 
     const [shapes, shapeHandlers] = useListState<Shape>([]);
-
-    // useEffect(()=>{
-
-    //     // remove (undo) unfinished shape
-
-    //     setIsDrawing(false)
-    // }, [tool])
 
     /* ref: https://stackoverflow.com/a/56870752 */
     const getMousePos = (): Konva.Vector2d | null => {
@@ -93,15 +56,49 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         return transform.point(pos);
     };
 
-    const [isDrawing, setIsDrawing] = useState(false);
+    const handleWheelZoom = (e: Konva.KonvaEventObject<WheelEvent>) => {
+        if (!stageRef.current) return;
+
+        // ref: https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html
+        const oldScale = stageRef.current.scaleX();
+        const pointer = stageRef.current.getPointerPosition();
+
+        if (!pointer) return;
+
+        const mousePointTo = {
+            x: (pointer.x - stageRef.current.x()) / oldScale,
+            y: (pointer.y - stageRef.current.y()) / oldScale,
+        };
+
+        // how to scale? Zoom in? Or zoom out?
+        let direction = e.evt.deltaY > 0 ? -1 : 1;
+
+        // when we zoom on trackpad, e.evt.ctrlKey is true
+        // in that case lets revert direction
+        if (e.evt.ctrlKey) {
+            direction = -direction;
+        }
+
+        const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+        const clampedNewScale = clamp(newScale, minScale, maxScale);
+        setStageScale(clampedNewScale);
+
+        stageRef.current.scale({ x: clampedNewScale, y: clampedNewScale });
+
+        const newPos = {
+            x: pointer.x - mousePointTo.x * clampedNewScale,
+            y: pointer.y - mousePointTo.y * clampedNewScale,
+        };
+        stageRef.current.position(newPos);
+        setStagePos(newPos);
+    };
+
     return (
         <Stage
             className={classes.stage}
             onMouseDown={(e) => {
                 // ref: https://github.com/konvajs/react-konva/issues/164#issuecomment-360837853
                 if (tool === "rectangle") {
-                    console.log("place");
-
                     const mousePos = getMousePos();
                     if (!mousePos) return;
 
@@ -157,42 +154,9 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
                 setStagePos(e.currentTarget.position());
             }}
             onWheel={(e) => {
-                // ref: https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html
-                // stop default scrolling
+                // Stop default scrolling
                 e.evt.preventDefault();
-                if (!stageRef.current) return;
-
-                const oldScale = stageRef.current.scaleX();
-                const pointer = stageRef.current.getPointerPosition();
-
-                if (!pointer) return;
-
-                const mousePointTo = {
-                    x: (pointer.x - stageRef.current.x()) / oldScale,
-                    y: (pointer.y - stageRef.current.y()) / oldScale,
-                };
-
-                // how to scale? Zoom in? Or zoom out?
-                let direction = e.evt.deltaY > 0 ? -1 : 1;
-
-                // when we zoom on trackpad, e.evt.ctrlKey is true
-                // in that case lets revert direction
-                if (e.evt.ctrlKey) {
-                    direction = -direction;
-                }
-
-                const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
-                const clampedNewScale = clamp(newScale, minScale, maxScale);
-                setStageScale(clampedNewScale);
-
-                stageRef.current.scale({ x: clampedNewScale, y: clampedNewScale });
-
-                const newPos = {
-                    x: pointer.x - mousePointTo.x * clampedNewScale,
-                    y: pointer.y - mousePointTo.y * clampedNewScale,
-                };
-                stageRef.current.position(newPos);
-                setStagePos(newPos);
+                handleWheelZoom(e);
             }}
         >
             <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />

@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 
-export const useKeyHeld = ({
-    code,
-    onDown,
-    onUp,
-}: {
-    code: KeyboardEvent["code"];
-    onDown?: (e: KeyboardEvent) => void;
-    onUp?: (e: KeyboardEvent) => void;
-}) => {
+export const useKeyHeld = (
+    {
+        code,
+        onDown,
+        onUp,
+    }: {
+        code: KeyboardEvent["code"];
+        onDown?: (e: KeyboardEvent) => void;
+        onUp?: (e: KeyboardEvent) => void;
+    },
+
+    deps: React.DependencyList = []
+) => {
     const [keyHeld, setKeyHeld] = useState(false);
 
     const downHandler = (e: KeyboardEvent) => {
@@ -32,7 +36,7 @@ export const useKeyHeld = ({
             window.removeEventListener("keydown", downHandler);
             window.removeEventListener("keyup", upHandler);
         };
-    }, []);
+    }, deps);
 
     return keyHeld;
 };

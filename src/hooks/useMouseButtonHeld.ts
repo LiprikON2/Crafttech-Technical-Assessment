@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 
-export const useMouseButtonHeld = ({
-    button,
-    onDown,
-    onUp,
-}: {
-    button: number; // 0 for left, 1 for middle, 2 for right
-    onDown?: (e: MouseEvent) => void;
-    onUp?: (e: MouseEvent) => void;
-}) => {
+export const useMouseButtonHeld = (
+    {
+        button,
+        onDown,
+        onUp,
+    }: {
+        button: number; // 0 for left, 1 for middle, 2 for right
+        onDown?: (e: MouseEvent) => void;
+        onUp?: (e: MouseEvent) => void;
+    },
+    deps: React.DependencyList = []
+) => {
     const [buttonHeld, setButtonHeld] = useState(false);
 
     const downHandler = (e: MouseEvent) => {
@@ -32,7 +35,7 @@ export const useMouseButtonHeld = ({
             window.removeEventListener("mousedown", downHandler);
             window.removeEventListener("mouseup", upHandler);
         };
-    }, []);
+    }, deps);
 
     return buttonHeld;
 };
