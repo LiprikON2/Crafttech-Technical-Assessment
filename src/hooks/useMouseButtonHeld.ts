@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { MouseButtons } from "~/scenes";
 
 export const useMouseButtonHeld = (
     {
@@ -6,7 +7,7 @@ export const useMouseButtonHeld = (
         onDown,
         onUp,
     }: {
-        button: number; // 0 for left, 1 for middle, 2 for right
+        button: MouseButtons;
         onDown?: (e: MouseEvent) => void;
         onUp?: (e: MouseEvent) => void;
     },

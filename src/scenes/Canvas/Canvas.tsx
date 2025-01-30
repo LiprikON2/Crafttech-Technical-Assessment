@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
 import { useListState } from "@mantine/hooks";
-import { Layer, Rect, Stage } from "react-konva";
+import { Circle, Layer, Rect, Stage } from "react-konva";
 import Konva from "konva";
 
 import { Tool } from "~/App";
 import { clamp } from "~/utils";
 import { GridLayer } from "./components";
-import { useMoveTool, useRectangleTool, useToolEffects } from "./hooks";
+import { useCircleTool, useMoveTool, useRectangleTool, useToolEffects } from "./hooks";
 import classes from "./Canvas.module.css";
 
 interface CanvasProps {
@@ -15,7 +15,7 @@ interface CanvasProps {
 }
 
 const shapeComponentMap = {
-    // circle: Circle,
+    circle: Circle,
     rectangle: Rect,
 };
 
@@ -37,38 +37,75 @@ export type Shape = {
 };
 
 export const createTargetHandles = (shape: Shape) => {
-    return {
-        type: shape.type,
-        props: {
-            x: shape.props.x,
-            y: shape.props.y,
-            uuid: crypto.randomUUID(),
-            stroke: "#888",
-            dash: [4, 4],
-            width: shape.props.width,
-            height: shape.props.height,
-            cornerRadius: shape.props.cornerRadius,
-            scaleX: shape.props.scaleX,
-            scaleY: shape.props.scaleY,
-        },
-    };
+    switch (shape.type) {
+        case "rectangle":
+            return {
+                type: shape.type,
+                props: {
+                    x: shape.props.x,
+                    y: shape.props.y,
+                    uuid: crypto.randomUUID(),
+                    stroke: "#888",
+                    dash: [4, 4],
+                    width: shape.props.width,
+                    height: shape.props.height,
+                    cornerRadius: shape.props.cornerRadius,
+                    scaleX: shape.props.scaleX,
+
+                    scaleY: shape.props.scaleY,
+                },
+            };
+        case "circle":
+            return {
+                type: shape.type,
+                props: {
+                    x: shape.props.x,
+                    y: shape.props.y,
+                    uuid: crypto.randomUUID(),
+                    stroke: "#888",
+                    dash: [4, 4],
+                    radius: shape.props.radius,
+                },
+            };
+    }
 };
 
 export const createDrawingMarquee = (type: Shapes, mousePos: Konva.Vector2d) => {
-    return {
-        type,
-        props: {
-            x: mousePos.x,
-            y: mousePos.y,
-            uuid: crypto.randomUUID(),
-            stroke: "#888",
-            dash: [2, 2],
-            width: 0,
-            height: 0,
-            cornerRadius: 5,
-        },
-    };
+    switch (type) {
+        case "rectangle":
+            return {
+                type,
+                props: {
+                    x: mousePos.x,
+                    y: mousePos.y,
+                    uuid: crypto.randomUUID(),
+                    stroke: "#888",
+                    dash: [2, 2],
+                    width: 0,
+                    height: 0,
+                    cornerRadius: 5,
+                },
+            };
+        case "circle":
+            return {
+                type,
+                props: {
+                    x: mousePos.x,
+                    y: mousePos.y,
+                    uuid: crypto.randomUUID(),
+                    stroke: "#888",
+                    dash: [2, 2],
+                    radius: 0,
+                },
+            };
+    }
 };
+
+export enum MouseButtons {
+    Left = 0,
+    Middle = 1,
+    Right = 2,
+}
 
 export const Canvas = ({ tool, setTool }: CanvasProps) => {
     const scaleBy = 1.1;
@@ -147,14 +184,6 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         setStagePos(newPos);
     };
 
-    const rectangleToolHandler = useRectangleTool({
-        drawingMarquee,
-        setDrawingMarquee,
-        shapeHandlers,
-        setTarget,
-        setTargetHandles,
-    });
-
     const moveToolHandler = useMoveTool({
         shapes,
         dragOrigin,
@@ -166,14 +195,25 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         setTargetHandles,
     });
 
+    const rectangleToolHandler = useRectangleTool({
+        drawingMarquee,
+        setDrawingMarquee,
+        shapeHandlers,
+        setTarget,
+        setTargetHandles,
+    });
+    const circleToolHandler = useCircleTool({
+        drawingMarquee,
+        setDrawingMarquee,
+        shapeHandlers,
+        setTarget,
+        setTargetHandles,
+    });
+
     const toolHandlers = {
         "move-tool": moveToolHandler,
         rectangle: rectangleToolHandler,
-        circle: {
-            onMouseDown: () => {},
-            onMouseUp: () => {},
-            onMouseMove: () => {},
-        },
+        circle: circleToolHandler,
         triangle: {
             onMouseDown: () => {},
             onMouseUp: () => {},
@@ -184,7 +224,7 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
             onMouseUp: () => {},
             onMouseMove: () => {},
         },
-    } as const;
+    };
 
     return (
         <Stage

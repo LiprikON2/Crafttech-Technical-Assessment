@@ -1,5 +1,5 @@
 import Konva from "konva";
-import { createTargetHandles, isShape, Shape } from "../Canvas";
+import { createTargetHandles, isShape, MouseButtons, Shape } from "../Canvas";
 import { UseListStateHandlers } from "@mantine/hooks";
 
 interface MoveToolHandler {
@@ -25,6 +25,8 @@ export const useMoveTool = ({
 }: MoveToolHandler) => {
     const toolHandler = {
         onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+            if (e.evt.button !== MouseButtons.Left) return;
+
             if (!isShape(e.target.attrs.type)) {
                 setTarget(null);
                 return;
@@ -45,6 +47,8 @@ export const useMoveTool = ({
         },
 
         onMouseUp: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => {
+            if (e.evt.button !== MouseButtons.Left) return;
+
             setDragOrigin(null);
         },
 

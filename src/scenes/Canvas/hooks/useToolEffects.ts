@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Tool } from "~/App";
 import { useKeyHeld, useMouseButtonHeld } from "~/hooks";
-import { Shape } from "../Canvas";
+import { MouseButtons, Shape } from "../Canvas";
 
 export const useToolEffects = (stageRef: any, tool: Tool, setTool: (value: Tool) => void) => {
     const [drawingMarquee, setDrawingMarquee] = useState<Shape | null>(null);
@@ -37,7 +37,7 @@ export const useToolEffects = (stageRef: any, tool: Tool, setTool: (value: Tool)
     /* Can pan stage while middle mouse button is held */
     useMouseButtonHeld(
         {
-            button: 1,
+            button: MouseButtons.Middle,
             onDown: (e) => {
                 e.preventDefault();
                 prevToolRef.current = tool;
@@ -53,7 +53,8 @@ export const useToolEffects = (stageRef: any, tool: Tool, setTool: (value: Tool)
 
     useEffect(() => {
         setDrawingMarquee(null);
-        Konva.dragButtons = [1]; // Middle mouse button to pan stage
+        setDragOrigin(null);
+        Konva.dragButtons = [MouseButtons.Middle];
 
         switch (tool) {
             case "move-tool":
@@ -69,7 +70,7 @@ export const useToolEffects = (stageRef: any, tool: Tool, setTool: (value: Tool)
                 switchCursor("crosshair");
                 break;
             case "hand-tool":
-                Konva.dragButtons = [0, 1, 2]; // Left, middle, right mouse buttons to pan stage
+                Konva.dragButtons = [MouseButtons.Left, MouseButtons.Middle, MouseButtons.Right];
                 switchCursor("grab");
                 break;
         }
