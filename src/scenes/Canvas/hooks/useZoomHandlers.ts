@@ -15,7 +15,7 @@ export const useZoomHandlers = ({
     setStageScale,
     setStagePos,
     scaleBy = 1.1,
-    minScale = 0.5,
+    minScale = 0.25,
     maxScale = 5,
 }: ZoomHandlers) => {
     const handleWheelZoom = (e: Konva.KonvaEventObject<WheelEvent>) => {
