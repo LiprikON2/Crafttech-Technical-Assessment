@@ -25,14 +25,6 @@ const data: { value: Tool; label: React.ReactNode }[] = [
         ),
     },
     {
-        value: "triangle",
-        label: (
-            <ActionIcon size="lg" variant="transparent" component="span">
-                <IconTriangle style={{ width: "60%", height: "60%" }} stroke={1.5} />
-            </ActionIcon>
-        ),
-    },
-    {
         value: "rectangle",
         label: (
             <ActionIcon size="lg" variant="transparent" component="span">
@@ -45,6 +37,14 @@ const data: { value: Tool; label: React.ReactNode }[] = [
         label: (
             <ActionIcon size="lg" variant="transparent" component="span">
                 <IconCircle style={{ width: "60%", height: "60%" }} stroke={1.5} />
+            </ActionIcon>
+        ),
+    },
+    {
+        value: "triangle",
+        label: (
+            <ActionIcon size="lg" variant="transparent" component="span">
+                <IconTriangle style={{ width: "60%", height: "60%" }} stroke={1.5} />
             </ActionIcon>
         ),
     },
@@ -63,13 +63,13 @@ export const Toolbar = ({ tool, setTool }: ToolbarProps) => {
         <>
             <Dialog position={{ top: 20, left: 20 }} p={0} w="100%" opened>
                 <SegmentedControl
+                    classNames={{ label: classes.label }}
                     onChange={(tool) => {
                         if (isTool(tool)) setTool(tool);
                     }}
                     value={tool}
                     transitionDuration={100}
                     orientation="vertical"
-                    classNames={{ label: classes.label }}
                     withItemsBorders={false}
                     data={data}
                 />

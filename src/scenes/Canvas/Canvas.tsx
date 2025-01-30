@@ -6,7 +6,7 @@ import Konva from "konva";
 import { Tool } from "~/App";
 import { clamp } from "~/utils";
 import { GridLayer } from "./components";
-import { useToolEffects } from "./hooks";
+import { useMoveTool, useRectangleTool, useToolEffects } from "./hooks";
 import classes from "./Canvas.module.css";
 
 interface CanvasProps {
@@ -21,13 +21,53 @@ const shapeComponentMap = {
 
 type Shapes = keyof typeof shapeComponentMap;
 
-const isShape = (value: string): value is Shapes => {
+export const isShape = (value: string): value is Shapes => {
     return Object.keys(shapeComponentMap).includes(value as Shapes);
 };
+
+export interface ToolHandler {
+    onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
+    onMouseMove: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
+    onMouseUp: (e: Konva.KonvaEventObject<MouseEvent>, mousePos: Konva.Vector2d) => void;
+}
 
 export type Shape = {
     type: Shapes;
     props: { x: number; y: number; uuid: string } & Konva.NodeConfig;
+};
+
+export const createTargetHandles = (shape: Shape) => {
+    return {
+        type: shape.type,
+        props: {
+            x: shape.props.x,
+            y: shape.props.y,
+            uuid: crypto.randomUUID(),
+            stroke: "#888",
+            dash: [4, 4],
+            width: shape.props.width,
+            height: shape.props.height,
+            cornerRadius: shape.props.cornerRadius,
+            scaleX: shape.props.scaleX,
+            scaleY: shape.props.scaleY,
+        },
+    };
+};
+
+export const createDrawingMarquee = (type: Shapes, mousePos: Konva.Vector2d) => {
+    return {
+        type,
+        props: {
+            x: mousePos.x,
+            y: mousePos.y,
+            uuid: crypto.randomUUID(),
+            stroke: "#888",
+            dash: [2, 2],
+            width: 0,
+            height: 0,
+            cornerRadius: 5,
+        },
+    };
 };
 
 export const Canvas = ({ tool, setTool }: CanvasProps) => {
@@ -107,6 +147,45 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
         setStagePos(newPos);
     };
 
+    const rectangleToolHandler = useRectangleTool({
+        drawingMarquee,
+        setDrawingMarquee,
+        shapeHandlers,
+        setTarget,
+        setTargetHandles,
+    });
+
+    const moveToolHandler = useMoveTool({
+        shapes,
+        dragOrigin,
+        setDragOrigin,
+        shapeHandlers,
+        target,
+        setTarget,
+        targetHandles,
+        setTargetHandles,
+    });
+
+    const toolHandlers = {
+        "move-tool": moveToolHandler,
+        rectangle: rectangleToolHandler,
+        circle: {
+            onMouseDown: () => {},
+            onMouseUp: () => {},
+            onMouseMove: () => {},
+        },
+        triangle: {
+            onMouseDown: () => {},
+            onMouseUp: () => {},
+            onMouseMove: () => {},
+        },
+        "hand-tool": {
+            onMouseDown: () => {},
+            onMouseUp: () => {},
+            onMouseMove: () => {},
+        },
+    } as const;
+
     return (
         <Stage
             ref={stageRef}
@@ -130,173 +209,19 @@ export const Canvas = ({ tool, setTool }: CanvasProps) => {
                 const mousePos = getMousePos();
                 if (!mousePos) return;
 
-                // ref: https://github.com/konvajs/react-konva/issues/164#issuecomment-360837853
-                if (tool === "rectangle") {
-                    const mousePos = getMousePos();
-                    if (!mousePos) return;
-
-                    setDrawingMarquee({
-                        type: "rectangle",
-                        props: {
-                            x: mousePos.x,
-                            y: mousePos.y,
-                            uuid: crypto.randomUUID(),
-                            stroke: "#888",
-                            dash: [2, 2],
-                            width: 0,
-                            height: 0,
-                            cornerRadius: 5,
-                        },
-                    });
-                }
-
-                if (tool === "move-tool") {
-                    console.log(
-                        "isShape(e.target.attrs.type)",
-                        isShape(e.target.attrs.type),
-                        e.target.attrs
-                    );
-                    if (isShape(e.target.attrs.type)) {
-                        const shapeIndex = shapes.findIndex(
-                            (shape) => shape.props.uuid === e.target.attrs.uuid
-                        );
-                        if (shapeIndex === -1) return;
-
-                        const shape = shapes[shapeIndex];
-
-                        const dragOriginX = mousePos.x - shape.props.x;
-                        const dragOriginY = mousePos.y - shape.props.y;
-                        console.log("shape.props.cornerRadius", shape.props.cornerRadius);
-                        setDragOrigin({ x: dragOriginX, y: dragOriginY });
-                        setTarget(shape.props.uuid);
-                        setTargetHandles({
-                            type: shape.type,
-                            props: {
-                                x: shape.props.x,
-                                y: shape.props.y,
-                                uuid: crypto.randomUUID(),
-                                stroke: "#888",
-                                dash: [4, 4],
-                                width: shape.props.width,
-                                height: shape.props.height,
-                                cornerRadius: shape.props.cornerRadius,
-                                scaleX: shape.props.scaleX,
-                                scaleY: shape.props.scaleY,
-                            },
-                        });
-
-                        shapeHandlers.reorder({ from: shapeIndex, to: shapes.length - 1 });
-                    } else {
-                        setTarget(null);
-                    }
-                }
+                toolHandlers[tool].onMouseDown(e, mousePos);
             }}
             onMouseUp={(e) => {
                 const mousePos = getMousePos();
                 if (!mousePos) return;
 
-                if (tool === "rectangle") {
-                    if (drawingMarquee === null) return;
-                    const newShape: Shape = {
-                        type: "rectangle",
-                        props: {
-                            x: drawingMarquee.props.x,
-                            y: drawingMarquee.props.y,
-                            uuid: crypto.randomUUID(),
-                            width: drawingMarquee.props.width,
-                            height: drawingMarquee.props.height,
-                            fill: Konva.Util.getRandomColor(),
-                            shadowBlur: 5,
-                            cornerRadius: 5,
-                            scaleX: drawingMarquee.props.scaleX,
-                            scaleY: drawingMarquee.props.scaleY,
-                        },
-                    };
-                    shapeHandlers.append(newShape);
-                    setDrawingMarquee(null);
-
-                    setTarget(newShape.props.uuid);
-                    setTargetHandles({
-                        type: newShape.type,
-                        props: {
-                            x: newShape.props.x,
-                            y: newShape.props.y,
-                            uuid: crypto.randomUUID(),
-                            stroke: "#888",
-                            dash: [4, 4],
-                            width: newShape.props.width,
-                            height: newShape.props.height,
-                            cornerRadius: newShape.props.cornerRadius,
-                            scaleX: newShape.props.scaleX,
-                            scaleY: newShape.props.scaleY,
-                        },
-                    });
-                }
-
-                if (tool === "move-tool") {
-                    setDragOrigin(null);
-                }
+                toolHandlers[tool].onMouseUp(e, mousePos);
             }}
             onMouseMove={(e) => {
                 const mousePos = getMousePos();
                 if (!mousePos) return;
 
-                if (tool === "rectangle") {
-                    if (drawingMarquee === null) return;
-                    const newWidth = mousePos.x - drawingMarquee.props.x;
-                    const newHeight = mousePos.y - drawingMarquee.props.y;
-
-                    // ref: https://github.com/konvajs/konva/issues/374
-
-                    let scaleX,
-                        scaleY = 1;
-                    if (newWidth < 0) scaleX = -1;
-                    if (newHeight < 0) scaleY = -1;
-
-                    setDrawingMarquee({
-                        ...drawingMarquee,
-                        props: {
-                            ...drawingMarquee.props,
-                            width: Math.abs(newWidth),
-                            height: Math.abs(newHeight),
-                            scaleX,
-                            scaleY,
-                        },
-                    });
-                }
-                if (tool === "move-tool") {
-                    if (target === null) return;
-                    if (dragOrigin === null) return;
-
-                    const shapeIndex = shapes.findIndex(
-                        (shape) => shape.props.uuid === e.target.attrs.uuid
-                    );
-                    if (shapeIndex === -1) return;
-
-                    const shape = shapes[shapeIndex];
-
-                    const newX = mousePos.x - dragOrigin.x;
-                    const newY = mousePos.y - dragOrigin.y;
-
-                    shapeHandlers.setItem(shapeIndex, {
-                        ...shape,
-                        props: {
-                            ...shape.props,
-                            x: newX,
-                            y: newY,
-                        },
-                    });
-
-                    if (targetHandles === null) return;
-                    setTargetHandles({
-                        ...targetHandles,
-                        props: {
-                            ...targetHandles.props,
-                            x: newX,
-                            y: newY,
-                        },
-                    });
-                }
+                toolHandlers[tool].onMouseMove(e, mousePos);
             }}
         >
             <GridLayer x={stagePos.x} y={stagePos.y} scale={stageScale} />
