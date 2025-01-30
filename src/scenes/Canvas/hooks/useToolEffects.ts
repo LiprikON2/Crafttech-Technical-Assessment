@@ -3,9 +3,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { Tool } from "~/App";
 import { useKeyHeld, useMouseButtonHeld } from "~/hooks";
+import { Shape } from "../Canvas";
 
 export const useToolEffects = (stageRef: any, tool: Tool, setTool: (value: Tool) => void) => {
-    const [isDrawing, setIsDrawing] = useState(false);
+    const [drawingMarquee, setDrawingMarquee] = useState<Shape | null>(null);
+    const [targetHandles, setTargetHandles] = useState<Shape | null>(null);
+    const [dragOrigin, setDragOrigin] = useState<Konva.Vector2d | null>(null);
+
+    const [target, setTarget] = useState<string | null>(null);
 
     const switchCursor = (cursor: string) => {
         if (!stageRef.current) return;
@@ -47,7 +52,7 @@ export const useToolEffects = (stageRef: any, tool: Tool, setTool: (value: Tool)
     );
 
     useEffect(() => {
-        setIsDrawing(false);
+        setDrawingMarquee(null);
         Konva.dragButtons = [1]; // Middle mouse button to pan stage
 
         switch (tool) {
@@ -70,5 +75,14 @@ export const useToolEffects = (stageRef: any, tool: Tool, setTool: (value: Tool)
         }
     }, [tool]);
 
-    return { isDrawing, setIsDrawing };
+    return {
+        target,
+        setTarget,
+        drawingMarquee,
+        setDrawingMarquee,
+        dragOrigin,
+        setDragOrigin,
+        targetHandles,
+        setTargetHandles,
+    };
 };
