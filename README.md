@@ -1,4 +1,4 @@
-# Тестовое задание для Crafttech - Редактор фигур
+# Тестовое задание от Crafttech - Редактор фигур
 
 [![wakatime](https://wakatime.com/badge/user/08f508bd-d42c-46d7-909f-c80e7f16dc92/project/179e30d9-b357-4034-aad9-59d0f686227d.svg)](https://wakatime.com/badge/user/08f508bd-d42c-46d7-909f-c80e7f16dc92/project/179e30d9-b357-4034-aad9-59d0f686227d)
 
